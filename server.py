@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Flask, render_template, request, make_response, session
+from flask import Flask, render_template, request, make_response, session, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user
 from flask_wtf import FlaskForm
 from werkzeug.utils import redirect
@@ -8,6 +8,7 @@ from wtforms import PasswordField, StringField, TextAreaField, SubmitField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 
+import user_api
 from data import db_session
 from data.users import User
 
@@ -83,7 +84,13 @@ def reqister():
         return redirect('/login')
     return render_template('index.html', title='Регистрация', form=form)
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
 def main():
+
+    app.register_blueprint(user_api.blueprint)
     app.run()
 
 class RegisterForm(FlaskForm):
