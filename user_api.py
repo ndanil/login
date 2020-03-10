@@ -3,7 +3,7 @@ from flask import jsonify, request
 
 from data import db_session
 from data.users import User
-
+db_session.global_init("db/blogs.sqlite")
 blueprint = flask.Blueprint('user_api', __name__,
                             template_folder='templates')
 
@@ -15,7 +15,7 @@ def get_users():
     return jsonify(
         {
             'users':[
-                item.to_dict(only=('id','name')) for item in users
+                item.to_dict(only=(['id'])) for item in users
             ]
         }
     )
@@ -32,7 +32,7 @@ def new_user():
             email=request.json['email'],
             about=request.json['about'],
             )
-        user.hashed_password = user.set_password(request.json['password'])
+        user.set_password(request.json['password'])
 
         session.add(user)
         session.commit()

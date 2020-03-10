@@ -2,6 +2,7 @@ import datetime
 
 from flask import Flask, render_template, request, make_response, session, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_restful import Api, Resource, abort
 from flask_wtf import FlaskForm
 from werkzeug.utils import redirect
 from wtforms import PasswordField, StringField, TextAreaField, SubmitField
@@ -13,6 +14,7 @@ from data import db_session
 from data.users import User
 
 app = Flask(__name__)
+api = Api(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=365)
 db_session.global_init("db/blogs.sqlite")
@@ -89,8 +91,8 @@ def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 def main():
+    api.add_resource(UserResource, '/api/user/<int:user_id>')
 
-    app.register_blueprint(user_api.blueprint)
     app.run()
 
 class RegisterForm(FlaskForm):
@@ -105,6 +107,27 @@ class LoginForm(FlaskForm):
     email = EmailField('Почта', validators=[DataRequired()])
     password = PasswordField('Пароль', validators=[DataRequired()])
     submit = SubmitField('Войти')
+
+def abortIfUserNotFound(user_id):
+    session = db_session.create_session()
+    user = session.query(User).get(user_id)
+    if not user:
+        abort(404,Message=f'User {user_id} not found.')
+
+
+class UserResource(Resource):
+    def get(self, user_id):
+        abortIfUserNotFound(user_id)
+        session = db_session.create_session()
+        user = session.query(User).get(user_id)
+        return jsonify({
+            'user':user.to_dict(only=['name','about','email'])
+        })
+    def post(self):
+        pass
+    def delete(self):
+        pass
+
 
 if __name__ == '__main__':
     main()
